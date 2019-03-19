@@ -1,0 +1,22 @@
+import json
+import boto3
+
+def lambda_handler(message, context):
+   
+    sns = boto3.client('sns')
+    alarmname = message['Records'][0]['Sns']['Message']['AlarmName']
+    print(alarmname)
+    subject = "***Sev 2*** CRITICAL FILES MODIFIED :: %s " % alarmname
+    sns_topic = "arn:aws:sns:us-east-1:063237965118:List-AWS-Audit"
+    
+    body = ''' Please verify for Audit  event  in Subject Line
+    Response time for Sev 2 :: before End of Business day.
+    '''
+  
+    sns.publish(
+        TopicArn=sns_topic,
+        Subject=subject,
+        Message=body
+    )
+
+    return ('Sent a message to an Amazon SNS topic.')
