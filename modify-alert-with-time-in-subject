@@ -1,0 +1,39 @@
+from datetime import datetime
+import dateutil.tz
+import json
+import boto3
+
+def lambda_handler(message, context):
+   
+    sns = boto3.client('sns')
+    
+    try:
+        user = message['detail']['userIdentity']['userName']
+    except Exception:
+        user = message['detail']['userIdentity']['sessionContext']['sessionIssuer']['userName']
+    
+    
+    user = user.split('@')[0]
+        
+    event = message['detail']['eventName']
+    #Convert current time to EST from UTC
+    eastern = dateutil.tz.gettz('US/Eastern')
+    time=datetime.now(tz=eastern)
+    time = time.strftime("%X")
+    
+    affectedentity = message['detail']['requestParameters']
+    affectedid =  affectedentity['bucketName']
+    
+    subject = "S2 {event} on {affectedid} by {user} at {time}".format(user=user,time=time,event=event,affectedid=affectedid)
+    body = "User : {user} caused {event} on S3 : {affectedid} at :  {time} \n Please verify for Audit  event in Subject Line  \n Response time for Sev 2 :: before End of Business day".format(user=user,time=time,event=event,affectedid=affectedid)
+              
+              
+    sns_topic = "arn:aws:sns:us-east-1:XXXXXXXXXXXXXXXX:List-AWS-Audit"
+    sns.publish(
+        TopicArn=sns_topic,
+        Subject=subject,
+        Message=body
+    )
+
+    return ('Sent a message to an Amazon SNS topic.')
+
